@@ -67,36 +67,40 @@ function checkAnswer() {
 
     totalQuestions++;
 
-    if (isCorrect && !isTooSlow) {
+    if (isCorrect) {
       correctAnswers++;
-      document.getElementById("feedback").textContent = "Correct!";
-    } else {
-      // Penalty for wrong or slow
-      maxQuestions++;
-      if (isTooSlow && isCorrect) {
+
+      if (isTooSlow) {
+        maxQuestions++; // ✅ Add penalty for slow even if correct
         document.getElementById("feedback").textContent = "Correct, but too slow!";
-      } else if (isTooSlow) {
-        document.getElementById("feedback").textContent = "Too slow! Try again.";
       } else {
-        document.getElementById("feedback").textContent = "Incorrect! Try again.";
+        document.getElementById("feedback").textContent = "Correct!";
       }
+
+      document.getElementById("answer").value = '';
+      generateQuestion(); // ✅ Move to next question
+    } else {
+      maxQuestions++; // ✅ Add penalty for wrong
+      document.getElementById("feedback").textContent = "Incorrect! Try again.";
+      // ❌ Stay on the same question
     }
 
     document.getElementById("time").textContent = `Time: ${formatTime(elapsedTime)}`;
     document.getElementById("progress").textContent = `Completed ${correctAnswers} / ${maxQuestions}`;
 
-    if (correctAnswers < maxQuestions) {
-      document.getElementById("answer").value = '';
-      generateQuestion();
-    } else {
+    if (correctAnswers >= maxQuestions) {
       document.getElementById("question").textContent = "You have completed all of the questions!";
       document.querySelector("button").disabled = true;
       document.getElementById("answer").disabled = true;
+    } else {
+      document.getElementById("answer").value = ''; // Clear input
     }
   } else {
     document.getElementById("feedback").textContent = "Please enter a valid number.";
   }
 }
+
+
 
 
     document.getElementById("answer").addEventListener("keypress", function (e) {
