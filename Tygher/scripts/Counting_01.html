@@ -1,161 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Counting by Steps Visual - Masked Text</title>
-<style>
-  body {
-    font-family: sans-serif;
-    padding: 30px;
-    text-align: center;
-  }
-  .container {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 20px;
-  }
-  input {
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    text-align: center;
-    border: 2px solid #ccc;
-    border-radius: 6px;
-
-    /* Always hide text */
-    color: transparent;
-    text-shadow: none;
-  }
-  input:focus {
-    /* Show text only when focused */
-    color: black !important;
-    text-shadow: none !important;
-  }
-  input.correct {
-    background-color: #a8e6a3;
-    border-color: #5cb85c;
-    /* Keep text hidden even if correct */
-    color: transparent !important;
-    text-shadow: none;
-  }
-  input.incorrect {
-    background-color: #fbb;
-    border-color: #d9534f;
-    /* Keep text hidden even if incorrect */
-    color: transparent !important;
-    text-shadow: none !important;
-  }
-  input.start {
-    background-color: #ddd;
-    border-color: #999;
-    font-weight: bold;
-    color: black !important;
-    cursor: default;
-  }
-  #message {
-    margin-top: 25px;
-    font-size: 28px;
-    color: green;
-    font-weight: bold;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Counting by Steps Visual - Masked Text</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 30px;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    input {
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      text-align: center;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      color: transparent;
+      text-shadow: none;
+    }
+    input:focus {
+      color: black !important;
+      text-shadow: none !important;
+    }
+    input.correct {
+      background-color: #a8e6a3;
+      border-color: #5cb85c;
+      color: transparent !important;
+      text-shadow: none;
+    }
+    input.incorrect {
+      background-color: #fbb;
+      border-color: #d9534f;
+      color: transparent !important;
+      text-shadow: none !important;
+    }
+    input.start {
+      background-color: #ddd;
+      border-color: #999;
+      font-weight: bold;
+      color: black !important;
+      cursor: default;
+    }
+    #message {
+      margin-top: 25px;
+      font-size: 28px;
+      color: green;
+      font-weight: bold;
+    }
+    #instruction {
+      margin-top: 10px;
+      font-size: 20px;
+    }
+  </style>
 </head>
 <body>
 
-<h1>Counting by Steps Game</h1>
-<p id="instruction"></p>
+  <h1>Counting by Steps Game</h1>
+  <p id="instruction"></p>
 
-<div class="container" id="boxes">
-  <!-- Boxes will be created by JS -->
-</div>
+  <div class="container" id="boxes"></div>
 
-<div id="message"></div>
+  <div id="message"></div>
 
-<script>
-  const startNumber = Math.floor(Math.random() * 21);
-  const stepMagnitude = Math.floor(Math.random() * 4) + 2; // 2 to 5
-  const stepSign = Math.random() < 0.5 ? 1 : -1;         // 50% chance + or -
-  const step = stepMagnitude * stepSign;
-  const totalSteps = 10;
+  <script>
+    const totalRounds = 20;
+    let roundCounter = 0;
 
-  const container = document.getElementById('boxes');
-  const message = document.getElementById('message');
-  const instruction = document.getElementById('instruction');
+    const container = document.getElementById('boxes');
+    const message = document.getElementById('message');
+    const instruction = document.getElementById('instruction');
 
-  instruction.textContent = `Starting from ${startNumber}, count by ${step}'s — fill in the boxes!`;
+    function startGame() {
+      container.innerHTML = '';
+      message.textContent = '';
 
-  const startBox = document.createElement('input');
-  startBox.value = startNumber;
-  startBox.classList.add('start');
-  startBox.readOnly = true;
-  container.appendChild(startBox);
+      const totalSteps = 10;
+const stepMagnitude = Math.floor(Math.random() * 4) + 2; // 2–5
+const stepSign = Math.random() < 0.5 ? 1 : -1;
+const step = stepMagnitude * stepSign;
 
-  let currentIndex = 0;
+let startNumber;
 
-  for(let i=0; i<totalSteps; i++) {
-    const input = document.createElement('input');
-    input.setAttribute('maxlength', 4);
-    container.appendChild(input);
-  }
+// Ensure sequence stays ≥ 0
+if (step < 0) {
+  // Prevent underflow: starting number must be large enough
+  startNumber = Math.floor(Math.random() * (100 - (Math.abs(step) * totalSteps))) + (Math.abs(step) * totalSteps);
+} else {
+  // Any value between 0–20 is fine for positive steps
+  startNumber = Math.floor(Math.random() * 21);
+}
 
-  const inputs = container.querySelectorAll('input:not(.start)');
 
-  function getExpectedValue(index) {
-    return startNumber + step * (index + 1);
-  }
+      instruction.textContent = `Round ${roundCounter + 1} of ${totalRounds}: Starting from ${startNumber}, count by ${step}'s`;
 
-  inputs.forEach((input, index) => {
-    input.addEventListener('input', () => {
-      const expected = getExpectedValue(index);
-      const val = parseInt(input.value, 10);
+      const startBox = document.createElement('input');
+      startBox.value = startNumber;
+      startBox.classList.add('start');
+      startBox.readOnly = true;
+      container.appendChild(startBox);
 
-      if(val === expected) {
-        input.classList.add('correct');
-        input.classList.remove('incorrect');
-        input.disabled = true;
+      let currentIndex = 0;
 
-        currentIndex = index + 1;
-
-        if(currentIndex < inputs.length) {
-          inputs[currentIndex].focus();
-        } else {
-          message.textContent = "🎉 Congratulations! You completed the counting sequence.";
-        }
-      } else if(input.value.length > 0) {
-        input.classList.add('incorrect');
-        input.classList.remove('correct');
-      } else {
-        input.classList.remove('incorrect');
-        input.classList.remove('correct');
+      for (let i = 0; i < totalSteps; i++) {
+        const input = document.createElement('input');
+        input.setAttribute('maxlength', 4);
+        container.appendChild(input);
       }
-    });
 
-    input.addEventListener('focus', () => {
-      // Show text on focus for ease of typing
-      input.style.color = 'black';
-      input.style.textShadow = 'none';
-    });
+      const inputs = container.querySelectorAll('input:not(.start)');
 
-    input.addEventListener('blur', () => {
-  if (!input.disabled) {
-    input.style.color = 'transparent';
-    input.style.textShadow = 'none';
-  }
-});
-
-
-    input.addEventListener('keydown', e => {
-      if(e.key === 'Enter' && input.classList.contains('correct')) {
-        if(index + 1 < inputs.length) {
-          inputs[index + 1].focus();
-        }
+      function getExpectedValue(index) {
+        return startNumber + step * (index + 1);
       }
-    });
-  });
 
-  inputs[0].focus();
-</script>
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', () => {
+          const expected = getExpectedValue(index);
+          const val = parseInt(input.value, 10);
+
+          if (val === expected) {
+            input.classList.add('correct');
+            input.classList.remove('incorrect');
+            input.disabled = true;
+
+            currentIndex = index + 1;
+
+            if (currentIndex < inputs.length) {
+              inputs[currentIndex].focus();
+            } else {
+              roundCounter++;
+              if (roundCounter < totalRounds) {
+                message.textContent = "✅ Nice! Starting next round...";
+                setTimeout(startGame, 1500);
+              } else {
+                message.textContent = "🎉 You completed all rounds!";
+                instruction.textContent = "";
+              }
+            }
+          } else if (input.value.length > 0) {
+            input.classList.add('incorrect');
+            input.classList.remove('correct');
+          } else {
+            input.classList.remove('incorrect');
+            input.classList.remove('correct');
+          }
+        });
+
+        input.addEventListener('focus', () => {
+          input.style.color = 'black';
+          input.style.textShadow = 'none';
+        });
+
+        input.addEventListener('blur', () => {
+          if (!input.disabled) {
+            input.style.color = 'transparent';
+            input.style.textShadow = 'none';
+          }
+        });
+
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && input.classList.contains('correct')) {
+            if (index + 1 < inputs.length) {
+              inputs[index + 1].focus();
+            }
+          }
+        });
+      });
+
+      inputs[0].focus();
+    }
+
+    // Start the first round
+    startGame();
+  </script>
 
 </body>
 </html>
