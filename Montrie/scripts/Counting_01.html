@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Counting by Steps Visual - Masked Text</title>
+<style>
+  body {
+    font-family: sans-serif;
+    padding: 30px;
+    text-align: center;
+  }
+  .container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  input {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    text-align: center;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+
+    /* Always hide text */
+    color: transparent;
+    text-shadow: none;
+  }
+  input:focus {
+    /* Show text only when focused */
+    color: black !important;
+    text-shadow: none !important;
+  }
+  input.correct {
+    background-color: #a8e6a3;
+    border-color: #5cb85c;
+    /* Keep text hidden even if correct */
+    color: transparent !important;
+    text-shadow: none;
+  }
+  input.incorrect {
+    background-color: #fbb;
+    border-color: #d9534f;
+    /* Keep text hidden even if incorrect */
+    color: transparent !important;
+    text-shadow: none !important;
+  }
+  input.start {
+    background-color: #ddd;
+    border-color: #999;
+    font-weight: bold;
+    color: black !important;
+    cursor: default;
+  }
+  #message {
+    margin-top: 25px;
+    font-size: 28px;
+    color: green;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>Counting by Steps Game</h1>
+<p id="instruction"></p>
+
+<div class="container" id="boxes">
+  <!-- Boxes will be created by JS -->
+</div>
+
+<div id="message"></div>
+
+<script>
+  const startNumber = Math.floor(Math.random() * 21);
+  const step = Math.floor(Math.random() * 4) + 2;
+  const totalSteps = 10;
+
+  const container = document.getElementById('boxes');
+  const message = document.getElementById('message');
+  const instruction = document.getElementById('instruction');
+
+  instruction.textContent = `Starting from ${startNumber}, count by ${step}'s — fill in the boxes!`;
+
+  const startBox = document.createElement('input');
+  startBox.value = startNumber;
+  startBox.classList.add('start');
+  startBox.readOnly = true;
+  container.appendChild(startBox);
+
+  let currentIndex = 0;
+
+  for(let i=0; i<totalSteps; i++) {
+    const input = document.createElement('input');
+    input.setAttribute('maxlength', 4);
+    container.appendChild(input);
+  }
+
+  const inputs = container.querySelectorAll('input:not(.start)');
+
+  function getExpectedValue(index) {
+    return startNumber + step * (index + 1);
+  }
+
+  inputs.forEach((input, index) => {
+    input.addEventListener('input', () => {
+      const expected = getExpectedValue(index);
+      const val = parseInt(input.value, 10);
+
+      if(val === expected) {
+        input.classList.add('correct');
+        input.classList.remove('incorrect');
+        input.disabled = true;
+
+        currentIndex = index + 1;
+
+        if(currentIndex < inputs.length) {
+          inputs[currentIndex].focus();
+        } else {
+          message.textContent = "🎉 Congratulations! You completed the counting sequence.";
+        }
+      } else if(input.value.length > 0) {
+        input.classList.add('incorrect');
+        input.classList.remove('correct');
+      } else {
+        input.classList.remove('incorrect');
+        input.classList.remove('correct');
+      }
+    });
+
+    input.addEventListener('focus', () => {
+      // Show text on focus for ease of typing
+      input.style.color = 'black';
+      input.style.textShadow = 'none';
+    });
+
+    input.addEventListener('blur', () => {
+  if (!input.disabled) {
+    input.style.color = 'transparent';
+    input.style.textShadow = 'none';
+  }
+});
+
+
+    input.addEventListener('keydown', e => {
+      if(e.key === 'Enter' && input.classList.contains('correct')) {
+        if(index + 1 < inputs.length) {
+          inputs[index + 1].focus();
+        }
+      }
+    });
+  });
+
+  inputs[0].focus();
+</script>
+
+</body>
+</html>
