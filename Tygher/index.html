@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Tygher's Map</title>
+  <style>
+    .map-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .map-overlay a {
+      pointer-events: all;
+      text-decoration: none;
+    }
+
+    .map-overlay text {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      fill: black;
+      dominant-baseline: middle;
+      text-anchor: middle;
+      pointer-events: none; /* prevents double interaction conflicts */
+    }
+  </style>
+</head>
+<body>
+  <h1>Map of Baldur's Gate</h1>
+  <p>You are a math wizard. Use your math skills to defeat your enemies and save the people of Baldur's Gate from the terrible events plagueing the area.</p>
+  <div class="map-container">
+    <img src="./images/entrance_map.png" alt="Interactive Map" width="800" />
+
+    <svg
+      class="map-overlay"
+      viewBox="0 0 800 600"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <!-- Circle hotspot with label -->
+      <a xlink:href="./scripts/Arithmetic_01.html">
+        <g>
+          <circle
+            cx="20" cy="450" r="10"
+            fill="rgba(0,200,255,0.4)"
+            stroke="blue" stroke-width="3"
+          />
+          <text x="20" y="450">1</text>
+        </g>
+      </a>
+
+      <!-- Another circle hotspot with label -->
+      <a xlink:href="./scripts/Arithmetic_02.html">
+        <g>
+          <circle
+            cx="50" cy="450" r="10"
+            fill="rgba(0,200,255,0.4)"
+            stroke="blue" stroke-width="3"
+          />
+          <text x="50" y="450">2</text>
+        </g>
+      </a>
+
+      <!-- Third circle hotspot with label -->
+      <a xlink:href="./scripts/Arithmetic_03.html">
+        <g>
+          <circle
+            cx="50" cy="500" r="10"
+            fill="rgba(0,200,255,0.4)"
+            stroke="red" stroke-width="3"
+          />
+          <text x="50" y="500">3</text>
+        </g>
+      </a>
+    </svg>
+  </div>
+
+  <p><a href="../index.html">← Back to Home</a></p>
+</body>
+</html>
