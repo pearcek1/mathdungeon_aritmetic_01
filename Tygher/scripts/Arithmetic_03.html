@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Distance Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    .number-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 40px 0;
+    }
+    .num {
+      font-size: 32px;
+      width: 60px;
+    }
+    .line {
+      height: 4px;
+      background-color: #333;
+      margin: 0 10px;
+      transition: width 0.3s ease;
+    }
+    input {
+      font-size: 18px;
+      padding: 6px 12px;
+      width: 100px;
+      margin-top: 20px;
+    }
+    .feedback {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .progress {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .timer {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>What's the Distance?</h1>
+
+  <div class="progress" id="progress">Completed: 0 | Remaining: 50</div>
+  <div class="timer" id="timer">Time left: 10s</div>
+
+  <div class="number-box">
+    <div class="num" id="num1">0</div>
+    <div class="line" id="line" style="width: 100px;"></div>
+    <div class="num" id="num2">0</div>
+  </div>
+
+  <input type="number" id="answerInput" placeholder="Enter distance" />
+  <div class="feedback" id="feedback"></div>
+
+  <script>
+    const maxDistance = 12;
+    const maxLineWidth = 300;
+    const minLineWidth = 30;
+    const timeLimit = 10; // seconds
+
+    let totalQuestions = 50;
+    let correctCount = 0;
+    let currentDistance = 0;
+    let timer = null;
+    let timeLeft = timeLimit;
+    let isWaitingForCorrect = false;
+
+    const input = document.getElementById("answerInput");
+    const feedback = document.getElementById("feedback");
+    const num1Span = document.getElementById("num1");
+    const num2Span = document.getElementById("num2");
+    const line = document.getElementById("line");
+    const progressDisplay = document.getElementById("progress");
+    const timerDisplay = document.getElementById("timer");
+
+    function updateProgress() {
+      progressDisplay.textContent = `Completed: ${correctCount} | Remaining: ${totalQuestions - correctCount}`;
+    }
+
+    function generateNumbers() {
+      if (correctCount >= totalQuestions) {
+        feedback.textContent = "🎉 You've completed all questions!";
+        input.disabled = true;
+        clearInterval(timer);
+        timerDisplay.textContent = '';
+        return;
+      }
+
+      let low = Math.floor(Math.random() * (101 - maxDistance));
+      let offset = Math.floor(Math.random() * maxDistance) + 1;
+      let high = low + offset;
+      currentDistance = offset;
+
+      num1Span.textContent = low;
+      num2Span.textContent = high;
+
+      let width = minLineWidth + (offset - 1) * ((maxLineWidth - minLineWidth) / (maxDistance - 1));
+      line.style.width = `${width}px`;
+
+      feedback.textContent = '';
+      input.value = '';
+      input.focus();
+
+      timeLeft = timeLimit;
+      updateTimerDisplay();
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          if (!isWaitingForCorrect) {
+            totalQuestions++;
+            updateProgress();
+            feedback.textContent = "⏱️ Time's up! Try again.";
+            isWaitingForCorrect = true;
+          }
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      timerDisplay.textContent = `Time left: ${timeLeft}s`;
+    }
+
+    function checkAnswer() {
+      const val = parseInt(input.value);
+      if (val === currentDistance) {
+        correctCount++;
+        updateProgress();
+        feedback.textContent = "✅ Correct!";
+        isWaitingForCorrect = false;
+        clearInterval(timer);
+        setTimeout(generateNumbers, 700);
+      } else {
+        if (!isWaitingForCorrect) {
+          totalQuestions++;
+          updateProgress();
+          feedback.textContent = "❌ Try again!";
+          isWaitingForCorrect = true;
+        } else {
+          feedback.textContent = "❌ Still incorrect. Try again.";
+        }
+      }
+    }
+
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        checkAnswer();
+      }
+    });
+
+    updateProgress();
+    generateNumbers();
+  </script>
+</body>
+</html>
