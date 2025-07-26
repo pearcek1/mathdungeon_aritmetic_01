@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+  <title>Multiplication Question</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      margin-top: 50px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+    }
+    #question {
+      font-size: 24px;
+      margin: 20px 0;
+    }
+    #timerDisplay {
+      font-size: 20px;
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="question">Loading...</div>
+  <input type="text" id="answer" placeholder="Your answer">
+  <button onclick="checkAnswer()">Check Answer</button>
+  <div id="feedback"></div>
+  <div id="timerDisplay">Time left: 10s</div>
+  <div id="time"></div>
+  <div id="progress"></div>
+
+  <script>
+    let correctAnswers = 0;
+    let maxQuestions = 100;
+    let totalQuestions = 0;
+    let currentResult = null;
+    let timeLimit = 20; // in seconds
+    let timer;
+    let timeLeft = timeLimit;
+    let startTime;
+
+    const num1Options = [7];
+    const num2Options = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    function startCountdown() {
+      clearInterval(timer);
+      timeLeft = timeLimit;
+      updateTimerDisplay();
+
+      timer = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          maxQuestions++; // penalty for timeout
+          document.getElementById("feedback").textContent = "⏰ Time's up! You must answer quicker.";
+          updateProgress();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      document.getElementById("timerDisplay").textContent = `Time left: ${timeLeft}s`;
+    }
+
+    function generateQuestion() {
+      const num1 = num1Options[Math.floor(Math.random() * num1Options.length)];
+      const num2 = num2Options[Math.floor(Math.random() * num2Options.length)];
+
+      document.getElementById("question").textContent = `What is ${num1} x ${num2}?`;
+      currentResult = num1 * num2;
+      startTime = Date.now();
+      document.getElementById("answer").value = '';
+      document.getElementById("feedback").textContent = '';
+      startCountdown();
+    }
+
+    function formatTime(ms) {
+      const seconds = Math.floor((ms / 1000) % 60);
+      const minutes = Math.floor((ms / 1000 / 60));
+      return `${minutes} minutes ${seconds} seconds`;
+    }
+
+    function updateProgress() {
+      document.getElementById("progress").textContent = `Completed ${correctAnswers} / ${maxQuestions}`;
+    }
+
+    function checkAnswer() {
+      const input = document.getElementById("answer").value.trim();
+      const elapsedTime = Date.now() - startTime;
+
+      if (!isNaN(input) && input !== '') {
+        const isCorrect = parseInt(input) === currentResult;
+        const isTooSlow = timeLeft <= 0;
+
+        totalQuestions++;
+
+        if (isCorrect) {
+          clearInterval(timer);
+          correctAnswers++;
+
+          if (isTooSlow) {
+            maxQuestions++;
+            document.getElementById("feedback").textContent = "✅ Correct, but too slow!";
+          } else {
+            document.getElementById("feedback").textContent = "✅ Correct!";
+          }
+
+          updateProgress();
+
+          if (correctAnswers >= maxQuestions) {
+            document.getElementById("question").textContent = "🎉 You have completed all of the questions!";
+            document.querySelector("button").disabled = true;
+            document.getElementById("answer").disabled = true;
+          } else {
+            generateQuestion();
+          }
+        } else {
+          maxQuestions++;
+          document.getElementById("feedback").textContent = "❌ Incorrect! Try again.";
+          updateProgress();
+        }
+
+        document.getElementById("time").textContent = `Time: ${formatTime(elapsedTime)}`;
+      } else {
+        document.getElementById("feedback").textContent = "⚠️ Please enter a valid number.";
+      }
+    }
+
+    document.getElementById("answer").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        checkAnswer();
+      }
+    });
+
+    updateProgress();
+    generateQuestion();
+  </script>
+
+</body>
+</html>
