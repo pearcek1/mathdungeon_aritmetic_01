@@ -16,6 +16,11 @@
       font-size: 24px;
       margin: 20px 0;
     }
+    #timerDisplay {
+      font-size: 20px;
+      color: red;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -24,24 +29,52 @@
   <input type="text" id="answer" placeholder="Your answer">
   <button onclick="checkAnswer()">Check Answer</button>
   <div id="feedback"></div>
+  <div id="timerDisplay">Time left: 10s</div>
   <div id="time"></div>
   <div id="progress"></div>
 
   <script>
     let correctAnswers = 0;
-    let maxQuestions = 20;
+    let maxQuestions = 10;
     let totalQuestions = 0;
     let currentResult = null;
-    let startTime = Date.now();
+    let timeLimit = 600; // seconds
+    let timer;
+    let timeLeft = timeLimit;
+    let startTime;
+
+    function startCountdown() {
+      clearInterval(timer);
+      timeLeft = timeLimit;
+      updateTimerDisplay();
+
+      timer = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          maxQuestions++; // penalty for timeout
+          document.getElementById("feedback").textContent = "Time's up! It has been 5 minutes. Try to solve this quicker.";
+          updateProgress();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      document.getElementById("timerDisplay").textContent = `Time left: ${timeLeft}s`;
+    }
 
     function generateQuestion() {
-      // Numbers between 101 and 999 inclusive
       let num1 = Math.floor(Math.random() * 899) + 101;
       let num2 = Math.floor(Math.random() * 899) + 101;
 
       document.getElementById("question").textContent = `What is ${num1} + ${num2}?`;
       currentResult = num1 + num2;
       startTime = Date.now();
+      document.getElementById("answer").value = '';
+      document.getElementById("feedback").textContent = '';
+      startCountdown();
     }
 
     function formatTime(ms) {
@@ -50,44 +83,49 @@
       return `${minutes} minutes ${seconds} seconds`;
     }
 
+    function updateProgress() {
+      document.getElementById("progress").textContent = `Completed ${correctAnswers} / ${maxQuestions}`;
+    }
+
     function checkAnswer() {
       const input = document.getElementById("answer").value.trim();
       const elapsedTime = Date.now() - startTime;
 
       if (!isNaN(input) && input !== '') {
         const isCorrect = parseInt(input) === currentResult;
-        const isTooSlow = elapsedTime > 300000; // 5 minutes, adjust if you want
+        const isTooSlow = timeLeft <= 0;
 
         totalQuestions++;
 
         if (isCorrect) {
+          clearInterval(timer);
           correctAnswers++;
 
           if (isTooSlow) {
-            maxQuestions++; // Penalty for slow even if correct
-            document.getElementById("feedback").textContent = "Correct, but too slow!";
+            maxQuestions++; // still penalize if too slow
+            document.getElementById("feedback").textContent = "✅ Correct, but too slow!";
           } else {
-            document.getElementById("feedback").textContent = "Correct!";
+            document.getElementById("feedback").textContent = "✅ Correct!";
           }
 
-          document.getElementById("answer").value = '';
-          generateQuestion(); // Move to next question
+          updateProgress();
+
+          if (correctAnswers >= maxQuestions) {
+            document.getElementById("question").textContent = "🎉 You have completed all of the questions!";
+            document.querySelector("button").disabled = true;
+            document.getElementById("answer").disabled = true;
+          } else {
+            generateQuestion();
+          }
         } else {
-          maxQuestions++; // Penalty for wrong
-          document.getElementById("feedback").textContent = "Incorrect! Try again.";
-          // Stay on same question
+          maxQuestions++; // penalty for wrong answer
+          document.getElementById("feedback").textContent = "❌ Incorrect! Try again.";
+          updateProgress();
         }
 
         document.getElementById("time").textContent = `Time: ${formatTime(elapsedTime)}`;
-        document.getElementById("progress").textContent = `Completed ${correctAnswers} / ${maxQuestions}`;
-
-        if (correctAnswers >= maxQuestions) {
-          document.getElementById("question").textContent = "You have completed all of the questions!";
-          document.querySelector("button").disabled = true;
-          document.getElementById("answer").disabled = true;
-        }
       } else {
-        document.getElementById("feedback").textContent = "Please enter a valid number.";
+        document.getElementById("feedback").textContent = "⚠️ Please enter a valid number.";
       }
     }
 
@@ -97,6 +135,7 @@
       }
     });
 
+    updateProgress();
     generateQuestion();
   </script>
 
