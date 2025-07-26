@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clock Game - Strict Mode</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            background-color: #fdfdfd;
+        }
+
+        .input-group {
+            margin-top: 15px;
+        }
+
+        input {
+            width: 60px;
+            padding: 10px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-weight: bold;
+            height: 24px;
+        }
+
+        #timer {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        #progress {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>What's the time?</h1>
+    <canvas id="clock" width="300" height="300"></canvas>
+
+    <div class="input-group">
+        <input type="number" id="hourInput" placeholder="Hour" min="1" max="12" autocomplete="off" />
+        <input type="number" id="minuteInput" placeholder="Minute" min="0" max="59" step="5" autocomplete="off" />
+        <button id="submitBtn">Submit</button>
+    </div>
+
+    <div class="message" id="message"></div>
+    <div id="timer">Time left: 20s</div>
+    <div id="progress"></div>
+
+    <script>
+        const canvas = document.getElementById("clock");
+        const ctx = canvas.getContext("2d");
+        const hourInput = document.getElementById("hourInput");
+        const minuteInput = document.getElementById("minuteInput");
+        const messageDiv = document.getElementById("message");
+        const timerDiv = document.getElementById("timer");
+        const progressDiv = document.getElementById("progress");
+        const submitBtn = document.getElementById("submitBtn");
+
+        let currentHour, currentMinute;
+        let questionCount = 0;
+        let questionLimit = 10;
+        let timer = 20;
+        let timerInterval = null;
+
+        function drawClock(hour, minute) {
+            ctx.clearRect(0, 0, 300, 300);
+
+            ctx.beginPath();
+            ctx.arc(150, 150, 100, 0, Math.PI * 2);
+            ctx.stroke();
+
+            for (let i = 1; i <= 12; i++) {
+                const angle = (i * Math.PI) / 6;
+                const x = 150 + Math.cos(angle - Math.PI / 2) * 85;
+                const y = 150 + Math.sin(angle - Math.PI / 2) * 85;
+                ctx.font = "16px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(i, x, y);
+            }
+
+            const hourAngle = ((hour % 12) + minute / 60) * (Math.PI / 6);
+            const minuteAngle = (minute * Math.PI) / 30;
+
+            ctx.strokeStyle = "blue";
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(150, 150);
+            ctx.lineTo(
+                150 + Math.cos(hourAngle - Math.PI / 2) * 50,
+                150 + Math.sin(hourAngle - Math.PI / 2) * 50
+            );
+            ctx.stroke();
+
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(150, 150);
+            ctx.lineTo(
+                150 + Math.cos(minuteAngle - Math.PI / 2) * 70,
+                150 + Math.sin(minuteAngle - Math.PI / 2) * 70
+            );
+            ctx.stroke();
+        }
+
+        function getRandomTime() {
+            const hour = Math.floor(Math.random() * 12) + 1;
+            const minute = Math.floor(Math.random() * 12) * 5;
+            return [hour, minute];
+        }
+
+
+        function loadNewQuestion() {
+            updateProgress();
+            messageDiv.textContent = "";
+            [currentHour, currentMinute] = getRandomTime();
+            drawClock(currentHour, currentMinute);
+            hourInput.value = "";
+            minuteInput.value = "";
+            submitBtn.disabled = false;
+            hourInput.disabled = false;
+            minuteInput.disabled = false;
+            hourInput.focus();
+            startTimer();
+        }
+
+        function updateProgress() {
+            // Clamp display so it doesn't say more than questionLimit
+            let currentQuestion = Math.min(questionCount + 1, questionLimit);
+            progressDiv.textContent = `Question ${currentQuestion} of ${questionLimit}`;
+        }
+
+
+        function submitAnswer() {
+            if (submitBtn.disabled) return;
+
+            const h = parseInt(hourInput.value);
+            const m = parseInt(minuteInput.value);
+
+            if (isNaN(h) || isNaN(m) || h < 1 || h > 12 || m < 0 || m > 59 || m % 5 !== 0) {
+                messageDiv.textContent = "Please enter a valid hour (1-12) and minute (multiple of 5).";
+                return;
+            }
+
+            clearInterval(timerInterval);
+
+            if (h === currentHour && m === currentMinute) {
+                messageDiv.textContent = "✅ Correct!";
+                submitBtn.disabled = true;
+                hourInput.disabled = true;
+                minuteInput.disabled = true;
+
+                questionCount++;  // Increase count when answered correctly
+                updateProgress();
+
+                if (questionCount >= questionLimit) {
+                    setTimeout(() => {
+                        ctx.clearRect(0, 0, 300, 300);
+                        messageDiv.textContent = "🎉 You've completed the game!";
+                        progressDiv.textContent = "";
+                        timerDiv.textContent = "";
+                        submitBtn.disabled = true;
+                        hourInput.disabled = true;
+                        minuteInput.disabled = true;
+                    }, 1500);
+                } else {
+                    setTimeout(loadNewQuestion, 1500);
+                }
+            } else {
+                messageDiv.textContent = "❌ Incorrect! Try again.";
+                questionLimit++;  // Add extra question for wrong
+                updateProgress(); // Immediately update progress on wrong
+
+                submitBtn.disabled = true;
+                hourInput.disabled = true;
+                minuteInput.disabled = true;
+                setTimeout(() => {
+                    messageDiv.textContent = "";
+                    submitBtn.disabled = false;
+                    hourInput.disabled = false;
+                    minuteInput.disabled = false;
+                    hourInput.value = "";
+                    minuteInput.value = "";
+                    hourInput.focus();
+                    startTimer();
+                }, 1500);
+            }
+        }
+
+        function startTimer() {
+            timer = 20;
+            timerDiv.textContent = `Time left: ${timer}s`;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timer--;
+                timerDiv.textContent = `Time left: ${timer}s`;
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    messageDiv.textContent = "⏰ Time's up! Keep trying.";
+                    questionLimit++;  // add extra question on timeout
+                    updateProgress(); // Immediately update progress on timeout
+                    submitBtn.disabled = false;
+                    hourInput.disabled = false;
+                    minuteInput.disabled = false;
+                    hourInput.focus();
+                }
+            }, 1000);
+        }
+
+
+        submitBtn.addEventListener("click", submitAnswer);
+
+        hourInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") minuteInput.focus();
+        });
+
+        minuteInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") submitAnswer();
+        });
+
+        // Initialize first question
+        questionCount = 0;
+        loadNewQuestion();
+    </script>
+</body>
+
+</html>
