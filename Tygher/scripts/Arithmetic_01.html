@@ -29,7 +29,7 @@
 
   <script>
     let correctAnswers = 0;
-    let maxQuestions = 100;
+    let maxQuestions = 20;
 	let totalQuestions = 0;
     let currentResult = null;
     let startTime = Date.now();
@@ -63,7 +63,7 @@ function checkAnswer() {
 
   if (!isNaN(input)) {
     const isCorrect = parseInt(input) === currentResult;
-    const isTooSlow = elapsedTime > 10000;
+    const isTooSlow = elapsedTime > 5000;
 
     totalQuestions++;
 
