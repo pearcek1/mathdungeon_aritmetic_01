@@ -30,16 +30,24 @@
   <script>
     let correctAnswers = 0;
     let maxQuestions = 10;
-	let totalQuestions = 0;
+    let totalQuestions = 0;
     let currentResult = null;
     let startTime = Date.now();
 
+    function randomTwoDigit() {
+      let num = Math.floor(Math.random() * 90) + 10; // 10–99
+      if (Math.random() < 0.5) num = -num;           // 50% chance negative
+      return num;
+    }
+
     function generateQuestion() {
       let num1, num2;
+
+      // keep generating until sum > 0
       do {
-        num1 = Math.floor(Math.random() * 21) - 10;
-        num2 = Math.floor(Math.random() * 110) - 10;
-      } while (num1 + num2 < 0 || num1 + num2 > 110);
+        num1 = randomTwoDigit();
+        num2 = randomTwoDigit();
+      } while (num1 + num2 <= 0);
 
       if (num2 < 0) {
         document.getElementById("question").textContent = `What is ${num1} - ${Math.abs(num2)}?`;
@@ -57,51 +65,48 @@
       return `${minutes} minutes ${seconds} seconds`;
     }
 
-function checkAnswer() {
-  const input = document.getElementById("answer").value.trim();
-  const elapsedTime = Date.now() - startTime;
+    function checkAnswer() {
+      const input = document.getElementById("answer").value.trim();
+      const elapsedTime = Date.now() - startTime;
 
-  if (!isNaN(input)) {
-    const isCorrect = parseInt(input) === currentResult;
-    const isTooSlow = elapsedTime > 300000;
+      if (!isNaN(input)) {
+        const isCorrect = parseInt(input) === currentResult;
+        const isTooSlow = elapsedTime > 30000;  // Answer in 30 seconds
 
-    totalQuestions++;
+        totalQuestions++;
 
-    if (isCorrect) {
-      correctAnswers++;
+        if (isCorrect) {
+          correctAnswers++;
 
-      if (isTooSlow) {
-        maxQuestions++; // ✅ Add penalty for slow even if correct
-        document.getElementById("feedback").textContent = "Correct, but too slow!";
+          if (isTooSlow) {
+            maxQuestions++; // ✅ Add penalty for slow even if correct
+            document.getElementById("feedback").textContent = "Correct, but too slow!";
+          } else {
+            document.getElementById("feedback").textContent = "Correct!";
+          }
+
+          document.getElementById("answer").value = '';
+          generateQuestion(); // ✅ Move to next question
+        } else {
+          maxQuestions++; // ✅ Add penalty for wrong
+          document.getElementById("feedback").textContent = "Incorrect! Try again.";
+          // ❌ Stay on the same question
+        }
+
+        document.getElementById("time").textContent = `Time: ${formatTime(elapsedTime)}`;
+        document.getElementById("progress").textContent = `Completed ${correctAnswers} / ${maxQuestions}`;
+
+        if (correctAnswers >= maxQuestions) {
+          document.getElementById("question").textContent = "You have completed all of the questions!";
+          document.querySelector("button").disabled = true;
+          document.getElementById("answer").disabled = true;
+        } else {
+          document.getElementById("answer").value = ''; // Clear input
+        }
       } else {
-        document.getElementById("feedback").textContent = "Correct!";
+        document.getElementById("feedback").textContent = "Please enter a valid number.";
       }
-
-      document.getElementById("answer").value = '';
-      generateQuestion(); // ✅ Move to next question
-    } else {
-      maxQuestions++; // ✅ Add penalty for wrong
-      document.getElementById("feedback").textContent = "Incorrect! Try again.";
-      // ❌ Stay on the same question
     }
-
-    document.getElementById("time").textContent = `Time: ${formatTime(elapsedTime)}`;
-    document.getElementById("progress").textContent = `Completed ${correctAnswers} / ${maxQuestions}`;
-
-    if (correctAnswers >= maxQuestions) {
-      document.getElementById("question").textContent = "You have completed all of the questions!";
-      document.querySelector("button").disabled = true;
-      document.getElementById("answer").disabled = true;
-    } else {
-      document.getElementById("answer").value = ''; // Clear input
-    }
-  } else {
-    document.getElementById("feedback").textContent = "Please enter a valid number.";
-  }
-}
-
-
-
 
     document.getElementById("answer").addEventListener("keypress", function (e) {
       if (e.key === "Enter") {
