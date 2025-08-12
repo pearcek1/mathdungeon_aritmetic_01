@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Multiplication Grid Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+  
+    table {
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+  
+    /* General table cell style */
+    td {
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      color: white;              /* default text color for black cells */
+      background-color: black;   /* default background for inner non-hidden cells */
+      user-select: none;
+      cursor: default;
+    }
+  
+    /* Header cells: row 1 and column 1 */
+    td.header {
+      background-color: white;  /* white background */
+      color: black;             /* black text */
+      font-weight: bold;
+      user-select: text;
+      cursor: default;
+    }
+  
+    /* Cells containing input boxes */
+    td input {
+      width: 38px;
+      height: 38px;
+      text-align: center;
+      font-size: 16px;
+      border: 2px solid #999;
+      background-color: white;
+      color: black;
+      cursor: text;
+      user-select: text;
+    }
+  
+    /* Correct input style */
+    input.correct {
+      background-color: #a8e6a3;
+      border-color: #5cb85c;
+    }
+  
+    /* Incorrect input style */
+    input.incorrect {
+      background-color: #fbb;
+      border-color: #d9534f;
+    }
+  
+    /* Message styling */
+    #message {
+      font-size: 24px;
+      font-weight: bold;
+      color: green;
+      margin-top: 10px;
+    }
+  
+    /* Additional safety: prevent text selection and pointer for black cells */
+    td[style*="background-color: black"] {
+      cursor: default;
+      user-select: none;
+    }
+  </style>
+  
+</head>
+<body>
+
+<h1>Multiplication Grid</h1>
+<table id="grid"></table>
+<div id="message"></div>
+
+<script>
+    const grid = document.getElementById("grid");
+    const message = document.getElementById("message");
+  
+    const size = 10;
+    let totalToGuess = 0;
+    let correctAnswers = 0;
+  
+    function randomHidden() {
+      return Math.random() < 0.2;
+    }
+  
+    function checkWin() {
+      if (correctAnswers === totalToGuess) {
+        message.textContent = "🎉 Well done!";
+      }
+    }
+  
+    for (let i = 1; i <= size; i++) {
+      const row = grid.insertRow();
+      for (let j = 1; j <= size; j++) {
+        const cell = row.insertCell();
+        const product = i * j;
+  
+        if (i === 1 || j === 1) {
+          // First row or first column: show product as header
+          cell.textContent = product;
+          cell.classList.add("header");
+        } else if (randomHidden()) {
+          // Hidden cells: input box for answer
+          const input = document.createElement("input");
+          input.setAttribute("maxlength", 3);
+          input.dataset.correct = product;
+  
+          input.addEventListener("input", () => {
+            const value = parseInt(input.value, 10);
+            if (value === product) {
+              input.classList.add("correct");
+              input.classList.remove("incorrect");
+              input.disabled = true;
+              correctAnswers++;
+              checkWin();
+            } else {
+              input.classList.remove("correct");
+              input.classList.add("incorrect");
+            }
+          });
+  
+          cell.appendChild(input);
+          totalToGuess++;
+        } else {
+          // Non-hidden inner cells: fill black and no number shown
+          cell.style.backgroundColor = "black";
+        }
+      }
+    }
+  </script>
+
+
+</body>
+</html>
