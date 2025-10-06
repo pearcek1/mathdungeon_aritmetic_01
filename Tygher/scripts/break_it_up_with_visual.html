@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Breakdown Numbers with Number Line</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 40px;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+      max-width: 600px;
+      margin: 0 auto 10px;
+      text-align: left;
+    }
+    input {
+      width: 100px;
+      text-align: center;
+      font-size: 22px;
+      padding: 8px;
+      margin: 0 5px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      margin-top: 25px;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #feedback {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+    #progress {
+      font-size: 16px;
+      margin-top: 15px;
+      color: #555;
+    }
+    #numberLine {
+      border: 1px solid #ccc;
+      margin-top: 40px;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<h1>The Art of Breaking Down Numbers</h1>
+
+<p>The target numbers here are all negative.</p>
+<p>Think of negative numbers like -39 as a number and a direction to the left of 0.</p>
+<p>What we want to teach you is to break down negative numbers by going past the target (moving left) and then coming back.</p>
+<p>For example: -39 = -40 + 1</p>
+
+<div style="font-size: 28px; margin-bottom: 10px;">
+  <span id="targetNumber">?</span> = 
+  <input type="text" id="tens" placeholder="Tens"> 
+  + 
+  <input type="text" id="ones" placeholder="Ones">
+</div>
+
+<button onclick="checkAnswer()">Check</button>
+
+<div id="feedback"></div>
+<div id="progress"></div>
+
+<svg id="numberLine" width="600" height="150"></svg>
+
+<script>
+let correctAnswers = 0;
+let totalQuestions = 0;
+const maxQuestions = 200;
+let currentNumber = 0;
+let correctTens = 0;
+let correctOnes = 0;
+
+function generateNumber() {
+  document.getElementById("feedback").textContent = "";
+
+  do {
+    currentNumber = -Math.floor(Math.random() * 99) - 1;
+  } while (
+    Math.abs(currentNumber) <= 15 || 
+    Math.abs(currentNumber) % 10 < 6
+  );
+
+  correctTens = Math.floor(currentNumber / 10) * 10;
+  correctOnes = currentNumber - correctTens;
+
+  document.getElementById("targetNumber").textContent = currentNumber;
+  document.getElementById("tens").value = "";
+  document.getElementById("ones").value = "";
+  document.getElementById("tens").focus();
+
+  drawNumberLine();
+}
+
+function checkAnswer() {
+  const tensInput = parseInt(document.getElementById("tens").value.trim());
+  const onesInput = parseInt(document.getElementById("ones").value.trim());
+  const feedback = document.getElementById("feedback");
+
+  if (isNaN(tensInput) || isNaN(onesInput)) {
+    feedback.textContent = "⚠️ Please enter both numbers.";
+    feedback.style.color = "orange";
+    return;
+  }
+
+  const reconstructed = tensInput + onesInput;
+  totalQuestions++;
+
+  if (reconstructed === currentNumber && tensInput === correctTens && onesInput === correctOnes) {
+    correctAnswers++;
+    feedback.textContent = "✅ Correct!";
+    feedback.style.color = "green";
+  } else {
+    feedback.textContent = `❌ Incorrect. Correct: ${currentNumber} = ${correctTens} + ${correctOnes}`;
+    feedback.style.color = "red";
+  }
+
+  updateProgress();
+
+  if (totalQuestions < maxQuestions) {
+    setTimeout(generateNumber, 1500);
+  } else {
+    endQuiz();
+  }
+}
+
+function updateProgress() {
+  document.getElementById("progress").textContent =
+    `Completed ${totalQuestions} / ${maxQuestions} | Correct: ${correctAnswers}`;
+}
+
+function endQuiz() {
+  document.getElementById("targetNumber").textContent = "🎉 Finished!";
+  document.getElementById("tens").disabled = true;
+  document.getElementById("ones").disabled = true;
+  document.querySelector("button").disabled = true;
+}
+
+document.getElementById("ones").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") checkAnswer();
+});
+
+function drawNumberLine() {
+  const svg = document.getElementById("numberLine");
+  svg.innerHTML = '';
+
+  const minVal = -100; 
+  const maxVal = 0;
+  const width = 500;
+  const margin = 50;
+  const scale = width / (maxVal - minVal);
+
+  const lineY = 50;
+  const tensY = 80;
+  const onesY = 110;
+
+  // Horizontal line
+  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1", margin);
+  line.setAttribute("y1", lineY);
+  line.setAttribute("x2", margin + width);
+  line.setAttribute("y2", lineY);
+  line.setAttribute("stroke", "black");
+  line.setAttribute("stroke-width", 2);
+  svg.appendChild(line);
+
+  // Tick marks and labels
+  for (let n = minVal; n <= maxVal; n += 10) {
+    const x = margin + (n - minVal) * scale;
+    const tick = document.createElementNS("http://www.w3.org/2000/svg","line");
+    tick.setAttribute("x1", x);
+    tick.setAttribute("y1", lineY - 5);
+    tick.setAttribute("x2", x);
+    tick.setAttribute("y2", lineY + 5);
+    tick.setAttribute("stroke", "black");
+    svg.appendChild(tick);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg","text");
+    label.setAttribute("x", x - 10);
+    label.setAttribute("y", lineY - 10);
+    label.setAttribute("font-size", "12px");
+    label.textContent = n;
+    svg.appendChild(label);
+  }
+
+  // Arrowhead definition (larger)
+  const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
+  const marker = document.createElementNS("http://www.w3.org/2000/svg","marker");
+  marker.setAttribute("id","arrowhead");
+  marker.setAttribute("markerWidth","8");  // smaller width
+  marker.setAttribute("markerHeight","8"); // smaller height
+  marker.setAttribute("refX","4");
+  marker.setAttribute("refY","1.5");
+  marker.setAttribute("orient","auto");
+  const polygon = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+  polygon.setAttribute("points","0 0, 4 1.5, 0 3"); // smaller triangle
+  polygon.setAttribute("fill","black");
+  marker.appendChild(polygon);
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+
+  const zeroX = margin + (0 - minVal) * scale;
+  const targetX = margin + (currentNumber - minVal) * scale;
+
+  // Red dot = target number
+  const dot = document.createElementNS("http://www.w3.org/2000/svg","circle");
+  dot.setAttribute("cx", targetX);
+  dot.setAttribute("cy", lineY);
+  dot.setAttribute("r",6);
+  dot.setAttribute("fill","red");
+  svg.appendChild(dot);
+
+  // Dynamic inputs
+  const tensInput = parseInt(document.getElementById("tens").value.trim());
+  const onesInput = parseInt(document.getElementById("ones").value.trim());
+
+  // Tens arrow (blue)
+  if (!isNaN(tensInput)) {
+    const tensX = zeroX + tensInput * scale;
+    drawArrow(svg, zeroX, tensY, tensX, tensY, "blue");
+  }
+
+  // Ones arrow (green)
+// Ones arrow (green)
+if (!isNaN(tensInput) && !isNaN(onesInput)) {
+  const onesX = zeroX + tensInput * scale + onesInput * scale;
+  drawArrow(svg, zeroX + tensInput * scale, onesY, onesX, onesY, "green");
+
+  // Vertical dotted line at the end of ones arrow
+  const vLine = document.createElementNS("http://www.w3.org/2000/svg","line");
+  vLine.setAttribute("x1", onesX);
+  vLine.setAttribute("y1", onesY - 100); // start a bit above arrow
+  vLine.setAttribute("x2", onesX);
+  vLine.setAttribute("y2", onesY + 20); // end a bit below arrow
+  vLine.setAttribute("stroke", "gray");
+  vLine.setAttribute("stroke-width", 2);
+  vLine.setAttribute("stroke-dasharray", "4,4"); // dotted line
+  svg.appendChild(vLine);
+}
+
+}
+
+function drawArrow(svg, x1, y1, x2, y2, color) {
+  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1", x1);
+  line.setAttribute("y1", y1);
+  line.setAttribute("x2", x2);
+  line.setAttribute("y2", y2);
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", 4);
+  line.setAttribute("marker-end", "url(#arrowhead)");
+  svg.appendChild(line);
+}
+
+// Dynamic redraw when user types
+document.getElementById("tens").addEventListener("input", drawNumberLine);
+document.getElementById("ones").addEventListener("input", drawNumberLine);
+
+updateProgress();
+generateNumber();
+</script>
+
+</body>
+</html>
