@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Column Subtraction Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 60px;
+    }
+    table {
+      margin: 0 auto;
+      border-collapse: collapse;
+      font-size: 28px;
+    }
+    td {
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    input {
+      width: 40px;
+      font-size: 24px;
+      text-align: center;
+    }
+    #feedback {
+      font-size: 22px;
+      margin-top: 20px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Subtract the numbers:</h2>
+
+  <table>
+    <tr id="num1Row"></tr>
+    <tr id="num2Row"></tr>
+    <tr><td colspan="3"><hr></td></tr>
+    <tr>
+      <td><input id="hundreds" maxlength="1"></td>
+      <td><input id="tens" maxlength="1"></td>
+      <td><input id="ones" maxlength="1"></td>
+    </tr>
+  </table>
+
+  <button onclick="checkAnswer()">Check Answer</button>
+  <div id="feedback"></div>
+
+  <script>
+    let num1, num2, correctAnswer;
+
+    function generateQuestion() {
+      num1 = Math.floor(Math.random() * 900) + 100; // 100–999
+      num2 = Math.floor(Math.random() * 900) + 100; // 100–999
+      if (num2 > num1) [num1, num2] = [num2, num1]; // ensure positive result
+      correctAnswer = num1 - num2;
+
+      const digits1 = String(num1).split('');
+      const digits2 = String(num2).split('');
+
+      document.getElementById("num1Row").innerHTML = 
+        digits1.map(d => `<td>${d}</td>`).join('');
+      document.getElementById("num2Row").innerHTML = 
+        digits2.map((d, i) => i === 0 ? `<td>-</td><td>${d}</td>` : `<td>${d}</td>`).join('').slice(4); // remove extra minus gap
+    }
+
+    function checkAnswer() {
+      const hundreds = document.getElementById("hundreds").value;
+      const tens = document.getElementById("tens").value;
+      const ones = document.getElementById("ones").value;
+
+      const userAnswer = hundreds + tens + ones;
+
+      if (userAnswer === String(correctAnswer)) {
+        document.getElementById("feedback").textContent = "✅ Correct!";
+        document.getElementById("feedback").style.color = "green";
+      } else {
+        document.getElementById("feedback").textContent = `❌ Incorrect. The correct answer is ${correctAnswer}.`;
+        document.getElementById("feedback").style.color = "red";
+      }
+    }
+
+    generateQuestion();
+  </script>
+
+</body>
+</html>
