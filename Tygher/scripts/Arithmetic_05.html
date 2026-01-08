@@ -2,33 +2,51 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Column Subtraction Test</title>
+  <title>Column Subtraction with Helper Rows</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin-top: 60px;
     }
+
     table {
       margin: 0 auto;
       border-collapse: collapse;
       font-size: 28px;
     }
+
     td {
       width: 40px;
       height: 40px;
       text-align: center;
       vertical-align: middle;
     }
+
     input {
       width: 40px;
       font-size: 24px;
       text-align: center;
     }
+
+    .work input {
+      background: #f7f7f7;
+      color: #555;
+    }
+
+
+    hr {
+      border: none;
+      border-top: 2px solid #000;
+      margin: 4px 0;
+    }
+
     #feedback {
       font-size: 22px;
       margin-top: 20px;
     }
+
     button {
       margin-top: 20px;
       padding: 10px 20px;
@@ -38,58 +56,126 @@
 </head>
 <body>
 
-  <h2>Subtract the numbers:</h2>
+<h2>Subtract the numbers:</h2>
 
-  <table>
-    <tr id="num1Row"></tr>
-    <tr id="num2Row"></tr>
-    <tr><td colspan="3"><hr></td></tr>
-    <tr>
-      <td><input id="hundreds" maxlength="1"></td>
-      <td><input id="tens" maxlength="1"></td>
-      <td><input id="ones" maxlength="1"></td>
-    </tr>
-  </table>
+<table>
+  <tr id="num1Row"></tr>
+  <tr id="num2Row"></tr>
+  <tr id="separatorRow"></tr>
+  <tr id="workRow1" class="work"></tr>
+  <tr id="workRow2" class="work"></tr>
+  <tr id="workRow3" class="work wide"></tr>
+  <tr id="answerRow"></tr>
+</table>
 
-  <button onclick="checkAnswer()">Check Answer</button>
-  <div id="feedback"></div>
+<button onclick="checkAnswer()">Check Answer</button>
+<div id="feedback"></div>
 
-  <script>
-    let num1, num2, correctAnswer;
+<script>
+  const MIN_DIGITS = 3;
+  const MAX_DIGITS = 10;
 
-    function generateQuestion() {
-      num1 = Math.floor(Math.random() * 900) + 100; // 100–999
-      num2 = Math.floor(Math.random() * 900) + 100; // 100–999
-      if (num2 > num1) [num1, num2] = [num2, num1]; // ensure positive result
-      correctAnswer = num1 - num2;
+  let num1, num2, correctAnswer, columnCount;
 
-      const digits1 = String(num1).split('');
-      const digits2 = String(num2).split('');
+  function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
 
-      document.getElementById("num1Row").innerHTML = 
-        digits1.map(d => `<td>${d}</td>`).join('');
-      document.getElementById("num2Row").innerHTML = 
-        digits2.map((d, i) => i === 0 ? `<td>-</td><td>${d}</td>` : `<td>${d}</td>`).join('').slice(4); // remove extra minus gap
+  function randomNumberWithDigits(digits) {
+    const min = 10 ** (digits - 1);
+    const max = 10 ** digits - 1;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function generateQuestion() {
+    const d1 = rand(MIN_DIGITS, MAX_DIGITS);
+    const d2 = rand(MIN_DIGITS, MAX_DIGITS);
+
+    num1 = randomNumberWithDigits(d1);
+    num2 = randomNumberWithDigits(d2);
+
+    if (num2 > num1) [num1, num2] = [num2, num1];
+    correctAnswer = num1 - num2;
+
+    renderProblem();
+    renderWorkRow("workRow1", 3);            // no operator
+renderWorkRow("workRow2", 3, '+');       // + in first column
+renderWorkRow("workRow3", 3, '+');       // + in first column
+
+    renderAnswer();
+  }
+
+  function renderProblem() {
+    const a = String(num1).split('');
+    const b = String(num2).split('');
+
+    const maxLen = Math.max(a.length, b.length);
+    columnCount = maxLen + 1;
+
+    document.getElementById("num1Row").innerHTML =
+      `<td></td>${padDigits(a, maxLen)}`;
+
+    document.getElementById("num2Row").innerHTML =
+      `<td>-</td>${padDigits(b, maxLen)}`;
+
+    document.getElementById("separatorRow").innerHTML =
+      `<td colspan="${columnCount}"><hr></td>`;
+  }
+
+  function renderWorkRow(rowId, maxLength) {
+    document.getElementById(rowId).innerHTML =
+      `<td></td>` +
+      Array.from({ length: columnCount - 1 }, () =>
+        `<td><input maxlength="${maxLength}"></td>`
+      ).join('');
+  }
+
+  function renderAnswer() {
+    const len = String(correctAnswer).length;
+    const blanks = columnCount - len - 1;
+
+    document.getElementById("answerRow").innerHTML =
+      `<td></td>` +
+      `<td></td>`.repeat(blanks) +
+      Array.from({ length: len }, () =>
+        `<td><input maxlength="1"></td>`
+      ).join('');
+  }
+
+  function padDigits(digits, width) {
+    return `<td></td>`.repeat(width - digits.length) +
+           digits.map(d => `<td>${d}</td>`).join('');
+  }
+
+  function checkAnswer() {
+    const inputs = document.querySelectorAll("#answerRow input");
+    const userAnswer = Array.from(inputs).map(i => i.value).join('');
+
+    if (userAnswer === String(correctAnswer)) {
+      showFeedback("✅ Correct!", "green");
+      generateQuestion();
+    } else {
+      showFeedback(`❌ Incorrect. The correct answer is ${correctAnswer}.`, "red");
     }
+  }
 
-    function checkAnswer() {
-      const hundreds = document.getElementById("hundreds").value;
-      const tens = document.getElementById("tens").value;
-      const ones = document.getElementById("ones").value;
+  function showFeedback(text, color) {
+    const f = document.getElementById("feedback");
+    f.textContent = text;
+    f.style.color = color;
+  }
+  
+  function renderWorkRow(rowId, maxLength = 1, operator = '') {
+  document.getElementById(rowId).innerHTML =
+    `<td>${operator}</td>` +  // optional operator in first column
+    Array.from({ length: columnCount - 1 }, () =>
+      `<td><input maxlength="${maxLength}"></td>`
+    ).join('');
+}
 
-      const userAnswer = hundreds + tens + ones;
 
-      if (userAnswer === String(correctAnswer)) {
-        document.getElementById("feedback").textContent = "✅ Correct!";
-        document.getElementById("feedback").style.color = "green";
-      } else {
-        document.getElementById("feedback").textContent = `❌ Incorrect. The correct answer is ${correctAnswer}.`;
-        document.getElementById("feedback").style.color = "red";
-      }
-    }
-
-    generateQuestion();
-  </script>
+  generateQuestion();
+</script>
 
 </body>
 </html>
