@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Time Difference Quiz</title>
+<style>
+body {
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+}
+h1 { margin-bottom: 20px; }
+
+.timeline {
+  position: relative;
+  width: 600px;
+  height: 150px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.time-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.line { width: 4px; height: 120px; background-color: black; margin-bottom: 10px; }
+.time-label { font-size: 22px; font-weight: bold; }
+
+.h-line {
+  position: absolute;
+  top: 50px;
+  height: 4px;
+  background-color: red;
+  transition: width 0.2s, background-color 0.2s;
+}
+
+.v-dashed {
+  position: absolute;
+  top: 20px;
+  height: 70px;
+  border-left: 3px dashed red;
+  transition: left 0.2s, border-color 0.2s;
+}
+
+.v-label {
+  position: absolute;
+  font-size: 16px;
+  font-weight: bold;
+  top: 0px;
+  left: 0px;
+  transform: translateX(5px);
+}
+
+.inputs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+input { width: 60px; font-size: 20px; text-align: center; padding: 5px; }
+
+button { font-size: 18px; padding: 5px 15px; }
+
+#message { font-size: 24px; font-weight: bold; color: green; margin-top: 15px; }
+</style>
+</head>
+<body>
+
+<h1>Time Difference Quiz</h1>
+
+<div class="timeline">
+  <div class="time-marker" id="startMarker"><div class="line"></div><div class="time-label" id="startTime"></div></div>
+  <div class="time-marker" id="endMarker"><div class="line"></div><div class="time-label" id="endTime"></div></div>
+  <div class="h-line" id="hLine"></div>
+  <div class="v-dashed" id="vLine"></div>
+  <div class="v-label" id="vLabel"></div>
+</div>
+
+<div class="inputs">
+  <input id="hoursInput" type="number" min="0" placeholder="hrs">
+  <span>hours</span>
+  <input id="minutesInput" type="number" min="0" max="59" placeholder="min">
+  <span>minutes</span>
+</div>
+
+<button id="checkBtn">Check Answer</button>
+<div id="message"></div>
+<div id="progress"></div>
+
+<script>
+const startTimeLabel = document.getElementById("startTime");
+const endTimeLabel = document.getElementById("endTime");
+const startMarker = document.getElementById("startMarker");
+const endMarker = document.getElementById("endMarker");
+const hLine = document.getElementById("hLine");
+const vLine = document.getElementById("vLine");
+const vLabel = document.getElementById("vLabel");
+const hoursInput = document.getElementById("hoursInput");
+const minutesInput = document.getElementById("minutesInput");
+const message = document.getElementById("message");
+const checkBtn = document.getElementById("checkBtn");
+const progress = document.getElementById("progress");
+
+let diffMinutes = 0;
+const totalQuestions = 5;
+let currentQuestion = 0;
+
+function randomTime() {
+  const h = Math.floor(Math.random() * 22);
+  const m = Math.floor(Math.random() * 60);
+  return { h, m };
+}
+
+function formatTime(t) {
+  return String(t.h).padStart(2, "0") + ":" + String(t.m).padStart(2, "0");
+}
+
+function newQuestion() {
+  if (currentQuestion >= totalQuestions) {
+    message.textContent = `🎉 Quiz completed! You finished ${totalQuestions} questions.`;
+    startTimeLabel.textContent = "";
+    endTimeLabel.textContent = "";
+    hLine.style.width = "0px";
+    vLine.style.left = "0px";
+    vLabel.textContent = "";
+    hoursInput.disabled = true;
+    minutesInput.disabled = true;
+    checkBtn.disabled = true;
+    progress.textContent = "";
+    return;
+  }
+
+  const start = randomTime();
+  let end = randomTime();
+  const startTotal = start.h * 60 + start.m;
+  let endTotal = end.h * 60 + end.m;
+
+  if (endTotal <= startTotal) {
+    endTotal = startTotal + Math.floor(Math.random() * 180) + 15;
+    end.h = Math.floor(endTotal / 60);
+    end.m = endTotal % 60;
+  }
+
+  diffMinutes = endTotal - startTotal;
+
+  startTimeLabel.textContent = formatTime(start);
+  endTimeLabel.textContent = formatTime(end);
+
+  hoursInput.value = "";
+  minutesInput.value = "";
+  hoursInput.disabled = false;
+  minutesInput.disabled = false;
+  message.textContent = "";
+  progress.textContent = `Question ${currentQuestion + 1} of ${totalQuestions}`;
+
+  updateLine();
+}
+
+function updateLine() {
+  const startRect = startMarker.getBoundingClientRect();
+  const endRect = endMarker.getBoundingClientRect();
+  const timelineRect = document.querySelector(".timeline").getBoundingClientRect();
+
+  const startCenter = startRect.left + startRect.width / 2 - timelineRect.left;
+  const endCenter = endRect.left + endRect.width / 2 - timelineRect.left;
+
+  let h = parseInt(hoursInput.value, 10);
+  let m = parseInt(minutesInput.value, 10);
+  if (isNaN(h)) h = 0;
+  if (isNaN(m)) m = 0;
+  const userMinutes = h * 60 + m;
+
+  const pixelsPerMinute = (endCenter - startCenter) / diffMinutes;
+  let lineWidth = userMinutes * pixelsPerMinute;
+  if (userMinutes === diffMinutes) lineWidth = endCenter - startCenter;
+
+  hLine.style.left = startCenter + "px";
+  hLine.style.width = lineWidth + "px";
+  vLine.style.left = startCenter + lineWidth + "px";
+
+  // Calculate actual end time based on user input
+  const startHours = parseInt(startTimeLabel.textContent.split(":")[0], 10);
+  const startMinutes = parseInt(startTimeLabel.textContent.split(":")[1], 10);
+  let totalMinutesUser = startHours * 60 + startMinutes + userMinutes;
+  totalMinutesUser = totalMinutesUser % (24 * 60);
+  const labelHours = Math.floor(totalMinutesUser / 60);
+  const labelMinutes = totalMinutesUser % 60;
+  vLabel.textContent = String(labelHours).padStart(2,"0") + ":" + String(labelMinutes).padStart(2,"0");
+  vLabel.style.left = startCenter + lineWidth + 5 + "px";
+  vLabel.style.top = "0px";
+
+  if (userMinutes < diffMinutes) {
+    hLine.style.backgroundColor = "blue";
+    vLine.style.borderLeftColor = "blue";
+  } else if (userMinutes > diffMinutes) {
+    hLine.style.backgroundColor = "red";
+    vLine.style.borderLeftColor = "red";
+  } else {
+    hLine.style.backgroundColor = "green";
+    vLine.style.borderLeftColor = "green";
+  }
+}
+
+hoursInput.addEventListener("input", updateLine);
+minutesInput.addEventListener("input", updateLine);
+
+checkBtn.addEventListener("click", () => {
+  const h = parseInt(hoursInput.value,10) || 0;
+  const m = parseInt(minutesInput.value,10) || 0;
+  const userMinutes = h*60 + m;
+
+  if (userMinutes === diffMinutes) {
+    message.textContent = "✅ Correct!";
+    currentQuestion++;
+    setTimeout(newQuestion, 800); // small delay to show correct feedback
+  } else {
+    message.textContent = "❌ Incorrect, try again!";
+  }
+});
+
+newQuestion();
+</script>
+
+</body>
+</html>
