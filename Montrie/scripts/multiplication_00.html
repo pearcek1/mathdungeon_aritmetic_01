@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Multiplication Grid Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    td {
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      color: white;
+      background-color: black;
+      user-select: none;
+      cursor: default;
+    }
+
+    td.header {
+      background-color: white;
+      color: black;
+      font-weight: bold;
+      user-select: text;
+    }
+
+    td input {
+      width: 38px;
+      height: 38px;
+      text-align: center;
+      font-size: 16px;
+      border: 2px solid #999;
+      background-color: white;
+      color: black;
+    }
+
+    input.correct {
+      background-color: #a8e6a3;
+      border-color: #5cb85c;
+    }
+
+    input.incorrect {
+      background-color: #fbb;
+      border-color: #d9534f;
+    }
+
+    #message {
+      font-size: 24px;
+      font-weight: bold;
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Multiplication Grid</h1>
+<table id="grid"></table>
+<div id="message"></div>
+
+<script>
+  const grid = document.getElementById("grid");
+  const message = document.getElementById("message");
+
+  const size = 10;
+
+  // Tables being practised
+  const practiceTables = [2, 3, 4, 5];
+
+  let totalToGuess = 0;
+  let correctAnswers = 0;
+
+  function requiresAnswer(i, j) {
+    return practiceTables.includes(i) || practiceTables.includes(j);
+  }
+
+  function checkWin() {
+    if (correctAnswers === totalToGuess) {
+      message.textContent = "🎉 Well done!";
+    }
+  }
+
+  // NOTE: loop now runs from 0 → 10
+  for (let i = 0; i <= size; i++) {
+    const row = grid.insertRow();
+
+    for (let j = 0; j <= size; j++) {
+      const cell = row.insertCell();
+
+      // Top-left cell: multiplication symbol
+      if (i === 0 && j === 0) {
+        cell.textContent = "×";
+        cell.classList.add("header");
+        continue;
+      }
+
+      // Header row or header column
+      if (i === 0 || j === 0) {
+        cell.textContent = i === 0 ? j : i;
+        cell.classList.add("header");
+        continue;
+      }
+
+      const product = i * j;
+
+      // Cells that require answers (times-table crosses)
+      if (requiresAnswer(i, j)) {
+        const input = document.createElement("input");
+        input.setAttribute("maxlength", 3);
+        input.dataset.correct = product;
+
+        input.addEventListener("input", () => {
+          const value = parseInt(input.value, 10);
+
+          if (value === product) {
+            input.classList.add("correct");
+            input.classList.remove("incorrect");
+            input.disabled = true;
+            correctAnswers++;
+            checkWin();
+          } else {
+            input.classList.remove("correct");
+            input.classList.add("incorrect");
+          }
+        });
+
+        cell.appendChild(input);
+        totalToGuess++;
+
+      } else {
+        // All other inner cells stay black
+        cell.style.backgroundColor = "black";
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
