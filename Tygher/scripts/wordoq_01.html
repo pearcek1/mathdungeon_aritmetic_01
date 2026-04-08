@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Adaptive Math Dungeon</title>
+<style>
+  body { font-family: Arial; text-align:center; margin-top:40px; }
+  #question { font-size:22px; margin-bottom:15px; }
+  input { font-size:18px; padding:5px; width:100px; text-align:center; }
+  button { font-size:16px; padding:5px 10px; }
+  #feedback { margin-top:10px; font-weight:bold; }
+  #stats { margin-top:20px; }
+  #difficulty { margin-top:10px; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<h1>Math Dungeon</h1>
+
+<div id="difficulty"></div>
+<div id="question"></div>
+
+<input id="answerInput" />
+<button onclick="checkAnswer()">Submit</button>
+
+<div id="feedback"></div>
+
+<div id="stats">
+  Correct: <span id="correct">0</span> |
+  Total Required: <span id="total">10</span>
+</div>
+
+<script>
+
+// ================= STATE =================
+
+let correctAnswers = 0;
+let totalQuestions = 10;
+
+let currentAnswer = null;
+
+let currentLevel = 1; // 1=Easy, 2=Medium, 3=Hard
+let correctStreak = 0;
+
+// ================= QUESTION BANKS =================
+
+// -------- EASY --------
+const easyQuestions = [
+
+{text:"{A} apples are on a table. {B} more apples are added. How many apples are there now?", generate:()=>({A:Math.floor(Math.random()*10)+1,B:Math.floor(Math.random()*10)+1}), answer:({A,B})=>A+B},
+  {text:"{A} students are in the library. {B} leave. How many are left?", generate:()=>{let A=Math.floor(Math.random()*20)+5; let B=Math.floor(Math.random()*(A+1)); return {A,B}}, answer:({A,B})=>A-B},
+  {text:"A farmer has {A} chickens and {B} cows. How many animals are there in total?", generate:()=>({A:Math.floor(Math.random()*10)+1,B:Math.floor(Math.random()*10)+1}), answer:({A,B})=>A+B},
+  {text: "If {A} marbles are divided equally among {B} children, how many marbles does each child get?",generate: () => {let B = Math.floor(Math.random() * 5) + 2;let k = Math.floor(Math.random() * 10) + 1;let A = B * k;return { A, B };},answer: ({ A, B }) => A / B},
+  {text:"A rectangle is {LENGTH} cm long and {WIDTH} cm wide. What is its area?", generate:()=>({LENGTH:Math.floor(Math.random()*20)+5, WIDTH:Math.floor(Math.random()*15)+3}), answer:({LENGTH,WIDTH})=>LENGTH*WIDTH},
+  {text:"A baker made {A} cakes. He sells {B} in the morning and {C} in the afternoon. How many cakes are left?", generate:()=>{let A=Math.floor(Math.random()*50)+10; let B=Math.floor(Math.random()*A); let C=Math.floor(Math.random()*(A-B+1)); return {A,B,C}}, answer:({A,B,C})=>A-B-C},
+  {text:"If {NAME} buys {A} pencils for {B} dollars each, how much does {NAME} spend?", generate:()=>{const names=["Alice","Bob","Charlie","Diana"]; const NAME=names[Math.floor(Math.random()*names.length)]; const A=Math.floor(Math.random()*10)+1; const B=Math.floor(Math.random()*5)+1; return {NAME,A,B}}, answer:({A,B})=>A*B},
+  {text:"A rectangle is {LENGTH} cm long and {WIDTH} cm wide. If the perimeter is asked, what is it?", generate:()=>({LENGTH:Math.floor(Math.random()*20)+5, WIDTH:Math.floor(Math.random()*15)+3}), answer:({LENGTH,WIDTH})=>2*(LENGTH+WIDTH)},
+  {text:"A train has {TOTAL} carriages. {FULL} are full and {EMPTY} are empty. How many carriages have passengers?", generate:()=>{const TOTAL=Math.floor(Math.random()*20)+10; const FULL=Math.floor(Math.random()*(TOTAL+1)); const EMPTY=TOTAL-FULL; return {TOTAL,FULL,EMPTY}}, answer:({TOTAL,FULL,EMPTY})=>FULL},
+
+{
+  text: "The time is {hour}:00 in Brisbane, Australia. London is 10 hours behind Brisbane. What is the time in London? (hh:mm)",
+  generate: () => {
+    // Ensure no negative wrap
+    const hour = Math.floor(Math.random() * 10) + 10; // 10–19
+    return { hour };
+  },
+  answer: ({hour}) => {
+    const resultHour = hour - 10;
+    return `${resultHour.toString().padStart(2,"0")}:00`;
+  },
+  level: "Level 1"
+},
+
+{
+  text: "The Wilston North Killers scored {total} runs in 20 overs. How many runs per over must the Ferny Grove Fairies score to match this total?",
+  
+  generate: () => {
+    const runsPerOverOptions = [6, 7, 8, 9];
+    const runsPerOver = runsPerOverOptions[Math.floor(Math.random()*runsPerOverOptions.length)];
+    const total = runsPerOver * 20;
+    return { total };
+  },
+
+  answer: ({ total }) => total / 20,
+
+  level: "Level 1"
+}
+
+];
+
+
+
+// -------- MEDIUM --------
+const mediumQuestions = [
+
+{
+  text:"It takes 5 minutes to travel between stations. How long will it take to go {A} stations?",
+  generate:()=>({A:Math.floor(Math.random()*10)+2}),
+  answer:({A})=>A*5
+},
+
+{
+  text: "A runner takes {baseTime} seconds to run 100m. How long will it take to run {distance}m at the same pace?",
+  
+  generate: () => {
+    const baseTimeOptions = [20, 25, 30, 40, 50];
+    const multiplierOptions = [2, 3, 4];  // 200m, 300m, 400m
+    
+    const baseTime = baseTimeOptions[Math.floor(Math.random() * baseTimeOptions.length)];
+    const multiplier = multiplierOptions[Math.floor(Math.random() * multiplierOptions.length)];
+    
+    const distance = multiplier * 100;
+    
+    return { baseTime, distance };
+  },
+  
+  answer: ({ baseTime, distance }) => {
+    return baseTime * (distance / 100);
+  }
+},
+
+{
+  text: "The time is {hour}:{minute} in Brisbane, Australia. London is 10 hours behind Brisbane. What is the time in London? (hh:mm)",
+  generate: () => {
+    const hour = Math.floor(Math.random() * 10) + 10; // 10–19
+    const minute = Math.floor(Math.random() * 60);
+    return { hour, minute: minute.toString().padStart(2,"0") };
+  },
+  answer: ({hour, minute}) => {
+    const resultHour = hour - 10;
+    return `${resultHour.toString().padStart(2,"0")}:${minute}`;
+  },
+  level: "Level 2"
+},
+
+{
+  text: "The Wilston North Killers scored {total} runs in 20 overs. The Ferny Grove Whimpy Whops must score more than this to win. What average runs per over must they score to win the match?",
+
+  generate: () => {
+    const runsPerOverOptions = [6, 7, 8];
+    const runsPerOver = runsPerOverOptions[Math.floor(Math.random()*runsPerOverOptions.length)];
+    const total = runsPerOver * 20;
+    return { total };
+  },
+
+  answer: ({ total }) => (total + 1) / 20,
+
+  level: "Level 2"
+}
+
+];
+
+// -------- HARD --------
+const hardQuestions = [
+
+{
+  text: "Runner A runs 100m in {Ta} seconds. Runner B runs 100m in {Tb} seconds. In a 100m race, how many metres head start should Runner A get so they finish together?",
+  generate: () => {
+
+    const pairs = [
+      {Ta:40, Tb:20},   // 50m
+      {Ta:60, Tb:30},   // 50m
+      {Ta:80, Tb:40},   // 50m
+      {Ta:80, Tb:20},   // 75m
+      {Ta:90, Tb:30},   // 67m (not whole)
+      {Ta:120, Tb:60},  // 50m
+      {Ta:120, Tb:40},  // 67m (not whole)
+      {Ta:150, Tb:50},  // 67m
+    ];
+
+    let pick = pairs[Math.floor(Math.random()*pairs.length)];
+    return pick;
+  },
+  answer: ({Ta,Tb}) => {
+    return Math.round(100 * (1 - Tb/Ta));
+  }
+},
+
+{
+  text: "At the moment, it is {hour}:{minute} in Brisbane, Australia. London operates 10 hours behind Brisbane time. Calculate the current time in London. Give your answer in 24-hour format (hh:mm).",
+  generate: () => {
+    // Allow crossing midnight
+    const hour = Math.floor(Math.random() * 24);
+    const minute = Math.floor(Math.random() * 60);
+    return { hour, minute };
+  },
+  answer: ({hour, minute}) => {
+    let resultHour = hour - 10;
+    if (resultHour < 0) resultHour += 24;
+
+    return `${resultHour.toString().padStart(2,"0")}:${minute.toString().padStart(2,"0")}`;
+  },
+  level: "Level 3"
+},
+
+{
+  text: "The Wilson North Killers scored {total} runs in 20 overs. The Ferny Grove Pansies have already scored {scored} runs in {oversUsed} overs. They have {oversLeft} overs remaining. What average runs per over must they score in the remaining overs to win the match?",
+
+  generate: () => {
+    const baseRateOptions = [6, 7];
+    const baseRate = baseRateOptions[Math.floor(Math.random()*baseRateOptions.length)];
+    const total = baseRate * 20;
+
+    const oversUsedOptions = [8, 10, 12];
+    const oversUsed = oversUsedOptions[Math.floor(Math.random()*oversUsedOptions.length)];
+    const oversLeft = 20 - oversUsed;
+
+    const currentRate = baseRate - 2; // easier chase but must accelerate
+    const scored = currentRate * oversUsed;
+
+    return { total, scored, oversUsed, oversLeft };
+  },
+
+  answer: ({ total, scored, oversLeft }) => {
+    const runsNeeded = total + 1 - scored;
+    return runsNeeded / oversLeft;
+  },
+
+  level: "Level 3"
+}
+
+];
+
+// ================= ENGINE =================
+
+function getQuestionByLevel(){
+  if(currentLevel === 1){
+    return easyQuestions[Math.floor(Math.random()*easyQuestions.length)];
+  }
+  if(currentLevel === 2){
+    return mediumQuestions[Math.floor(Math.random()*mediumQuestions.length)];
+  }
+  return hardQuestions[Math.floor(Math.random()*hardQuestions.length)];
+}
+
+function fillTemplate(template,vars){
+  return template.replace(/\{(.*?)\}/g,(match,key)=>vars[key]);
+}
+
+function nextQuestion(){
+
+  if(correctAnswers >= totalQuestions){
+    document.getElementById("question").textContent = "🎉 Dungeon Complete!";
+    return;
+  }
+
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("answerInput").value = "";
+
+  let q = getQuestionByLevel();
+  let vars = q.generate();
+
+  currentAnswer = q.answer(vars);
+
+  document.getElementById("question").textContent = fillTemplate(q.text,vars);
+
+  const levelNames = ["Easy","Medium","Hard"];
+  document.getElementById("difficulty").textContent =
+    "Difficulty: " + levelNames[currentLevel-1];
+}
+
+function checkAnswer(){
+
+  let input = document.getElementById("answerInput").value.trim();
+  if(input === "") return;
+
+  let val = input.includes(":") ? input : parseInt(input);
+
+  if(val == currentAnswer){
+
+    document.getElementById("feedback").textContent = "✅ Correct!";
+    document.getElementById("feedback").style.color = "green";
+
+    correctAnswers++;
+    correctStreak++;
+
+    if(correctStreak >= 3 && currentLevel < 3){
+      currentLevel++;
+      correctStreak = 0;
+    }
+
+    document.getElementById("correct").textContent = correctAnswers;
+
+    setTimeout(nextQuestion,700);
+
+  } else {
+
+    document.getElementById("feedback").textContent = "❌ Incorrect. Try again.";
+    document.getElementById("feedback").style.color = "red";
+
+    totalQuestions++;
+    correctStreak = 0;
+
+    if(currentLevel > 1){
+      currentLevel--;
+    }
+
+    document.getElementById("total").textContent = totalQuestions;
+  }
+}
+
+// Start first question
+nextQuestion();
+
+</script>
+
+</body>
+</html>
