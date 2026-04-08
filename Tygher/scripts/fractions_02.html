@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Visual Fractions Game</title>
+<style>
+:root { --card:#f7f7f9; --ink:#222; --muted:#666; }
+body { font-family:Arial; display:grid; place-items:center; min-height:100vh; margin:0; }
+.app { width:min(720px,92vw); }
+.card { background:var(--card); border-radius:16px; padding:20px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+.board { display:grid; place-items:center; background:#fff; border-radius:12px; padding:12px; }
+svg { width:420px; height:320px; max-width:100%; }
+.controls { display:flex; gap:8px; margin-top:12px; }
+input { flex:1; padding:10px; font-size:16px; border:1px solid #ddd; border-radius:10px; }
+button { padding:10px 14px; border:0; border-radius:10px; cursor:pointer; background:#3a7bfd; color:#fff; }
+.feedback { margin-top:10px; min-height:24px; font-weight:bold; }
+.ok { color:#137333; }
+.err { color:#b00020; }
+.meta { margin-top:8px; color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+<div class="card">
+<h2>What fraction is shaded blue?</h2>
+<div class="board">
+<svg id="scene" viewBox="0 0 420 320"></svg>
+</div>
+
+<div class="controls">
+<input id="answer" placeholder="e.g. 3/4" autocomplete="off"/>
+<button id="checkBtn">Check</button>
+</div>
+
+<div id="feedback" class="feedback"></div>
+<div id="meta" class="meta"></div>
+
+</div>
+</div>
+
+<script>
+// ---------------- STATE ----------------
+let denom, numer;
+let questionLimit = 20;
+let questionsCompleted = 0;
+
+// ---------------- HELPERS ----------------
+function gcd(a,b){ while(b){[a,b]=[b,a%b]} return a }
+function simplify(n,d){ const g=gcd(n,d); return [n/g,d/g]; }
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+function parseFraction(text){
+  const m = text.replace(/\s+/g,'').match(/^(\d+)\/(\d+)$/);
+  if(!m) return null;
+  return [parseInt(m[1]),parseInt(m[2])];
+}
+
+// ---------------- NEW PROBLEM ----------------
+function newProblem(){
+  denom = randInt(2,12);
+  numer = randInt(1,denom-1);
+
+  drawPie(210,170,110,numer,denom);
+
+  document.getElementById("answer").value="";
+  document.getElementById("feedback").textContent="";
+  updateMeta();
+}
+
+// ---------------- DRAW PIE ----------------
+function drawPie(cx,cy,r,shaded,total){
+  const scene=document.getElementById("scene");
+  scene.innerHTML="";
+  const full=2*Math.PI;
+  const step=full/total;
+
+  for(let i=0;i<total;i++){
+    const a0=i*step-Math.PI/2;
+    const a1=(i+1)*step-Math.PI/2;
+    const x0=cx+r*Math.cos(a0);
+    const y0=cy+r*Math.sin(a0);
+    const x1=cx+r*Math.cos(a1);
+    const y1=cy+r*Math.sin(a1);
+    const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+    const d=`M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`;
+    path.setAttribute("d",d);
+    path.setAttribute("fill",i<shaded?"#88aafc":"#f1f3f8");
+    path.setAttribute("stroke","#8b97b8");
+    scene.appendChild(path);
+  }
+}
+
+// ---------------- CHECK ANSWER ----------------
+function checkAnswer(){
+  const input=document.getElementById("answer").value.trim();
+  const parsed=parseFraction(input);
+  const feedback=document.getElementById("feedback");
+
+  if(!parsed){
+    feedback.textContent="Enter a valid fraction like 3/4.";
+    feedback.className="feedback err";
+    return;
+  }
+
+  const [n,d]=parsed;
+  const [sn,sd]=simplify(numer,denom);
+
+  // Must be simplified AND correct
+  if(n===sn && d===sd){
+      feedback.textContent="✅ Correct!";
+      feedback.className="feedback ok";
+      questionsCompleted++;
+      
+      if(questionsCompleted>=questionLimit){
+        feedback.textContent="🏆 Finished! Great work.";
+        return;
+      }
+
+      setTimeout(newProblem,600);
+  }
+  else{
+      feedback.textContent="❌ Incorrect or not simplified. Try again.";
+      feedback.className="feedback err";
+      questionLimit++; // increment required total
+      updateMeta();
+  }
+
+  updateMeta();
+}
+
+// ---------------- META DISPLAY ----------------
+function updateMeta(){
+  document.getElementById("meta").textContent =
+    `Completed: ${questionsCompleted} / ${questionLimit}`;
+}
+
+// ---------------- EVENTS ----------------
+document.getElementById("checkBtn").addEventListener("click",checkAnswer);
+document.getElementById("answer").addEventListener("keydown",e=>{
+  if(e.key==="Enter") checkAnswer();
+});
+
+// Start
+newProblem();
+</script>
+</body>
+</html>
