@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dynamic Multiplication - Countdown Timer</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+h2 {
+  margin-bottom: 10px;
+}
+#questionContainer {
+  text-align: center;
+  background: #fff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+#questionContainer p {
+  font-size: 2em;
+  margin: 20px 0;
+}
+input {
+  width: 80px;
+  font-size: 1em;
+  text-align: center;
+  padding: 5px;
+  margin: 0 5px;
+}
+.feedback {
+  margin-top: 15px;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+#timer {
+  margin-top: 10px;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<h2>Multiplication - Level 2</h2>
+<p>Questions Correct: <span id="correctCount">0</span> / <span id="totalQuestions">20</span></p>
+
+<div id="questionContainer">
+  <p id="questionText"></p>
+  <div class="feedback" id="feedback"></div>
+  <div id="timer">Time: 10s</div>
+</div>
+
+<script>
+let totalQuestions = 30;
+let questionsCorrect = 0;
+let currentQuestion = {};
+let countdown = 10;
+let timerInterval = null;
+
+const correctEl = document.getElementById('correctCount');
+const totalEl = document.getElementById('totalQuestions');
+const questionTextEl = document.getElementById('questionText');
+const feedback = document.getElementById('feedback');
+const timerEl = document.getElementById('timer');
+
+// --- Random numbers ---
+function randomNumber() {
+  return Math.floor(Math.random() * 12) + 2;
+}
+
+// --- Generate dynamic question ---
+function generateQuestion() {
+  const a = randomNumber();
+  const b = randomNumber();
+  const c = a * b;
+  const unknown = Math.floor(Math.random() * 3); // 0=a,1=b,2=c
+  currentQuestion = {a, b, c, unknown};
+
+  let questionHTML;
+  if (unknown === 0) {
+    questionHTML = `<input type="number" id="answerInput" /> × ${b} = ${c}`;
+  } else if (unknown === 1) {
+    questionHTML = `${a} × <input type="number" id="answerInput" /> = ${c}`;
+  } else {
+    questionHTML = `${a} × ${b} = <input type="number" id="answerInput" />`;
+  }
+
+  questionTextEl.innerHTML = questionHTML;
+  feedback.textContent = '';
+  countdown = 10;
+  timerEl.textContent = `Time: ${countdown}s`;
+  clearInterval(timerInterval);
+
+  const answerInput = document.getElementById('answerInput');
+  answerInput.focus();
+
+  // Start countdown timer
+  timerInterval = setInterval(() => {
+    countdown--;
+    timerEl.textContent = `Time: ${countdown}s`;
+    if (countdown <= 0) {
+      clearInterval(timerInterval);
+      totalQuestions++;
+      totalEl.textContent = totalQuestions;
+      feedback.textContent = "⏰ Time's up! You still need to answer this question.";
+      feedback.style.color = "orange";
+    }
+  }, 1000);
+
+  // Listen for Enter key
+  answerInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      submitAnswer();
+    }
+  });
+}
+
+// --- Submit answer ---
+function submitAnswer() {
+  const answerInput = document.getElementById('answerInput');
+  const userAnswer = parseInt(answerInput.value);
+  if (isNaN(userAnswer)) {
+    feedback.textContent = "❌ Please enter a number.";
+    feedback.style.color = "red";
+    return;
+  }
+
+  let correctAnswer;
+  if (currentQuestion.unknown === 0) correctAnswer = currentQuestion.c / currentQuestion.b;
+  else if (currentQuestion.unknown === 1) correctAnswer = currentQuestion.c / currentQuestion.a;
+  else correctAnswer = currentQuestion.c;
+
+  if (userAnswer === correctAnswer) {
+    feedback.textContent = "✅ Correct!";
+    feedback.style.color = "green";
+    questionsCorrect++;
+    correctEl.textContent = questionsCorrect;
+    clearInterval(timerInterval);
+    if (questionsCorrect >= totalQuestions) {
+      alert(`🎉 Quiz finished! You got ${questionsCorrect} correct out of ${totalQuestions}.`);
+    } else {
+      generateQuestion();
+    }
+  } else {
+    feedback.textContent = "❌ Wrong! You still need to answer this question.";
+    feedback.style.color = "red";
+    totalQuestions++;
+    totalEl.textContent = totalQuestions;
+  }
+}
+
+// --- Initialize ---
+window.addEventListener('DOMContentLoaded', () => {
+  totalEl.textContent = totalQuestions;
+  correctEl.textContent = questionsCorrect;
+  generateQuestion();
+});
+</script>
+
+</body>
+</html>
