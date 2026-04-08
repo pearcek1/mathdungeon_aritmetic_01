@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Greatest Common Divisor - Euclidean Method - Grade 4</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+table { border-collapse: collapse; margin-top: 10px; width: 100%; max-width: 400px; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: center; position: relative; }
+input { width: 60px; text-align: center; }
+button { margin-top: 10px; padding: 6px 12px; cursor: pointer; }
+.feedback { margin-top: 15px; font-weight: bold; font-size: 1.1em; }
+.container { display: flex; gap: 40px; flex-wrap: wrap; }
+.practice { flex: 1; min-width: 300px; position: relative; }
+.example { flex: 1; min-width: 300px; background: #f0f0f0; padding: 15px; border-radius: 8px; position: relative; }
+svg { position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+
+<h2>Greatest Common Divisor - Euclidean Method - Grade 4</h2>
+
+<p>Questions Correct: <span id="correctCount">0</span> / <span id="totalQuestions">3</span></p>
+
+<div class="container">
+  <!-- Left: Student practice -->
+  <div class="practice" id="practiceArea">
+    <p>Number 1: <span id="num1">0</span></p>
+    <p>Number 2: <span id="num2">0</span></p>
+
+    <table id="gcdTable">
+      <thead>
+        <tr>
+          <th>Dividend</th>
+          <th>Divisor</th>
+          <th>Multiple</th>
+          <th>Remainder</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button id="addRow">Add Row</button>
+
+    <div style="margin-top:10px;">
+      <label>Final GCD: <input type="number" id="finalGCD" /></label>
+      <button id="checkGCD">Check</button>
+      <button id="nextQuestion" style="display:none;">Next Question</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- Right: Example guide -->
+  <div class="example">
+    <h3>Example: GCD of 30 and 12</h3>
+    <p>The <strong>GCD</strong> is the largest number that divides both numbers exactly. Euclid's method:</p>
+
+    <table id="exampleTable">
+      <thead>
+        <tr>
+          <th>Dividend</th>
+          <th>Divisor</th>
+          <th>Multiple</th>
+          <th>Remainder</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="exDividend1">30</td>
+          <td id="exDivisor1">12</td>
+          <td>2</td>
+          <td id="exRemainder1">R = 30 - (12 × 2) = 6</td>
+        </tr>
+        <tr>
+          <td id="exDividend2">12</td>
+          <td id="exDivisor2">6</td>
+          <td>2</td>
+          <td id="exRemainder2">0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <svg id="exampleArrows">
+      <line id="exArrow1" stroke="blue" stroke-width="2" marker-end="url(#arrowhead)"/>
+      <line id="exArrow2" stroke="green" stroke-width="2" marker-end="url(#arrowhead)"/>
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="black"/>
+        </marker>
+      </defs>
+    </svg>
+
+    <p>✅ The last divisor before remainder 0 is the GCD → <strong>6</strong></p>
+
+    <h4>About Euclid</h4>
+    <p>Euclid (~300 BCE) was a Greek mathematician who wrote <em>Elements</em>. He developed this algorithm to find the GCD efficiently. Divide the larger number by the smaller, then replace the pair with (smaller number, remainder) and repeat until remainder is 0.</p>
+  </div>
+</div>
+
+<script>
+// --- Variables ---
+let totalQuestions = 3;
+let questionsCorrect = 0;
+let currentNumbers = {a:0, b:0};
+let questionCompleted = false;
+
+const num1El = document.getElementById('num1');
+const num2El = document.getElementById('num2');
+const correctEl = document.getElementById('correctCount');
+const totalEl = document.getElementById('totalQuestions');
+const feedback = document.getElementById('feedback');
+const tableBody = document.querySelector('#gcdTable tbody');
+const checkBtn = document.getElementById('checkGCD');
+const nextBtn = document.getElementById('nextQuestion');
+
+// --- Random number generator for Grade 4/5 ---
+function randomNumbers() {
+  let a = Math.floor(Math.random()*91) + 10; // 10–100
+  let b = Math.floor(Math.random()*91) + 10; // 10–100
+  return a >= b ? {a,b} : {a:b,b:a};
+}
+
+// --- Start new question ---
+function startNewQuestion() {
+  if (questionsCorrect >= totalQuestions) {
+    alert(`🎉 You have finished the quiz! You answered ${questionsCorrect} correctly.`);
+    return;
+  }
+
+  currentNumbers = randomNumbers();
+  num1El.textContent = currentNumbers.a;
+  num2El.textContent = currentNumbers.b;
+
+  tableBody.innerHTML = `
+    <tr>
+      <td><input type="number" value="${currentNumbers.a}" /></td>
+      <td><input type="number" value="${currentNumbers.b}" /></td>
+      <td><input type="number" /></td>
+      <td><input type="number" /></td>
+    </tr>
+    <tr>
+      <td><input type="number" /></td>
+      <td><input type="number" /></td>
+      <td><input type="number" /></td>
+      <td><input type="number" /></td>
+    </tr>
+  `;
+
+  document.getElementById('finalGCD').value = '';
+  feedback.textContent = '';
+  nextBtn.style.display = 'none';
+  checkBtn.style.display = 'inline';
+  questionCompleted = false;
+}
+
+// --- Add row ---
+document.getElementById('addRow').addEventListener('click', () => {
+  const newRow = document.createElement('tr');
+  newRow.innerHTML = `
+    <td><input type="number" /></td>
+    <td><input type="number" /></td>
+    <td><input type="number" /></td>
+    <td><input type="number" /></td>
+  `;
+  tableBody.appendChild(newRow);
+});
+
+// --- Check GCD ---
+checkBtn.addEventListener('click', () => {
+  if (questionCompleted) return;
+
+  const userGCD = parseInt(document.getElementById('finalGCD').value);
+  if (isNaN(userGCD)) {
+    feedback.textContent = "❌ Please enter a number for the GCD.";
+    feedback.style.color = "red";
+    return;
+  }
+
+  const gcd = (a,b) => { while(b){ [a,b] = [b, a%b]; } return a; };
+  const actualGCD = gcd(currentNumbers.a, currentNumbers.b);
+
+  if (userGCD === actualGCD) {
+    feedback.textContent = `✅ Correct! The GCD is ${actualGCD}.`;
+    feedback.style.color = "green";
+    questionsCorrect++;
+    correctEl.textContent = questionsCorrect;
+    questionCompleted = true;
+    checkBtn.style.display = 'none';
+    nextBtn.style.display = 'inline';
+
+    if (questionsCorrect >= totalQuestions) {
+      alert(`🎉 You have finished the quiz! You answered ${questionsCorrect} correctly.`);
+      nextBtn.style.display = 'none';
+    }
+  } else {
+    feedback.textContent = `❌ Wrong, try again.`;
+    feedback.style.color = "red";
+  }
+});
+
+// --- Next question ---
+nextBtn.addEventListener('click', () => startNewQuestion());
+
+// --- Arrow positioning ---
+function posLine(lineId, fromId, toId, shorten=30, offsetY=0) {
+  const line = document.getElementById(lineId);
+  const from = document.getElementById(fromId).getBoundingClientRect();
+  const to = document.getElementById(toId).getBoundingClientRect();
+  const svgRect = document.getElementById('exampleArrows').getBoundingClientRect();
+
+  let x1 = from.left + from.width/2 - svgRect.left;
+  let y1 = from.top + from.height/2 - svgRect.top + offsetY;
+  let x2 = to.left + to.width/2 - svgRect.left;
+  let y2 = to.top + to.height/2 - svgRect.top + offsetY;
+
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.sqrt(dx*dx + dy*dy);
+  if (length>0) {
+    const r = shorten/length;
+    x1 += dx*r; y1 += dy*r;
+    x2 -= dx*r; y2 -= dy*r;
+  }
+
+  line.setAttribute('x1', x1);
+  line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2);
+  line.setAttribute('y2', y2);
+}
+
+function positionExampleArrows() {
+  posLine('exArrow1', 'exDivisor1', 'exDividend2', 30, 5);
+  posLine('exArrow2', 'exRemainder1', 'exDivisor2', 30, 5);
+}
+
+// --- Initialize ---
+window.addEventListener('DOMContentLoaded', () => {
+  totalEl.textContent = totalQuestions;
+  correctEl.textContent = questionsCorrect;
+  startNewQuestion();
+  positionExampleArrows();
+});
+
+window.addEventListener('resize', positionExampleArrows);
+</script>
+
+</body>
+</html>
